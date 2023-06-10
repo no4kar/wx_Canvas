@@ -25,17 +25,20 @@ public:
 
     void AddRect(int width, int height, int centerX, int centerY, double angle, wxColor color, const std::string& text);
     void RemoveTopRect();
-
     int GetObjectCount() { return m_objList.size(); }
-
+    
 private:
     void OnPaint(wxPaintEvent& evt);
+    
+    auto GetClickedObj(wxMouseEvent& evt)const;
+    
     /*which object is selected, should be rotated(alt-kay) or moved*/
     void OnMouseDown(wxMouseEvent& evt);
     /*rotate or move*/
     void OnMouseMove(wxMouseEvent& evt);
     void OnMouseUp(wxMouseEvent& evt);
     void OnMouseLeave(wxMouseEvent& evt);/*cursore leave control aria*/
+    void OnMouseLDClicked(wxMouseEvent& evt);
 
     void FinishDrag();
     void FinishRotation();

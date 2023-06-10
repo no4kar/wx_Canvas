@@ -20,6 +20,7 @@ DrawingCanvas::DrawingCanvas(wxWindow* parent, wxWindowID id, const wxPoint& pos
 	this->Bind(wxEVT_MOTION, &DrawingCanvas::OnMouseMove, this);
 	this->Bind(wxEVT_LEFT_UP, &DrawingCanvas::OnMouseUp, this);
 	this->Bind(wxEVT_LEAVE_WINDOW, &DrawingCanvas::OnMouseLeave, this);/**/
+	this->Bind(wxEVT_LEFT_DCLICK, &DrawingCanvas::OnMouseLDClicked, this);
 
 	this->AddRect(this->FromDIP(200), this->FromDIP(160), this->FromDIP(150), this->FromDIP(140), -M_PI/3.0, *wxBLUE, "Sofiia");
 	this->AddRect(this->FromDIP(50), this->FromDIP(30), this->FromDIP(180), this->FromDIP(210), 0.0,/*semitransperenty*/wxColor(255, 0, 255, 128), "&");
@@ -99,26 +100,50 @@ void DrawingCanvas::RemoveTopRect()
 	}
 }
 
-void DrawingCanvas::OnMouseDown(wxMouseEvent& evt
-) {
-	auto clickedObjIter = std::find_if(this->m_objList.rbegin()
+auto DrawingCanvas::GetClickedObj(
+	wxMouseEvent& evt
+) const {
+	return std::find_if(
+		this->m_objList.rbegin()
 		, this->m_objList.rend()
 		, [evt](const GraphicObject& grphObj)->bool { /*[scale vision](args)->return{body}*/
 			auto inv = grphObj.transform;
 			inv.Invert();
 			wxPoint2DDouble clickPos = inv.TransformPoint(evt.GetPosition());
 			return grphObj.rect.Contains(clickPos); }
-		);
+	);
+}
+
+void DrawingCanvas::OnMouseLDClicked(
+	wxMouseEvent& evt
+) {
+	auto clickedObjIter = GetClickedObj(evt);
+
+	if (clickedObjIter /*if exist*/ != this->m_objList.rend()
+		) {
+		this->m_objList.erase(/* ".erase()" accept only forward iter */std::prev(clickedObjIter.base()));
+		Refresh();
+	}
+}
+
+void DrawingCanvas::OnMouseDown(
+	wxMouseEvent& evt
+) {
+	auto clickedObjIter = GetClickedObj(evt);
 
 	/*start to drag or rotation process*/
 
 	/*clicked object must on the top of stack, that mean last in the objList*/
-	if(clickedObjIter /*if not already on top*/ != this->m_objList.rend()) {
-		auto forwardIt = std::prev(clickedObjIter.base());/* ".erase()" accept only forward iter */
-		this->m_objList.push_back(*forwardIt);
-		this->m_objList.erase(forwardIt);
+	if (clickedObjIter /*if exist*/ != this->m_objList.rend()) {
+		if (wxGetKeyState(WXK_CONTROL)){
+			auto forwardIt = std::prev(clickedObjIter.base());/* ".erase()" accept only forward iter */
+			this->m_objList.push_back(*forwardIt);
+			this->m_objList.erase(forwardIt);
+			clickedObjIter = m_objList.rbegin();
+		}
 
-		this->m_draggedObj = &(*std::prev(this->m_objList.end()));
+
+		this->m_draggedObj = (GraphicObject*)&(*clickedObjIter/**std::prev(this->m_objList.end())/**/);
 		this->m_lastDragOrigin = evt.GetPosition();
 		this->m_shouldRotate = wxGetKeyState(WXK_ALT);/*if preset 'alt' key*/
 
@@ -126,8 +151,9 @@ void DrawingCanvas::OnMouseDown(wxMouseEvent& evt
 	}
 }
 
-void DrawingCanvas::OnMouseMove(wxMouseEvent& evt)
-{
+void DrawingCanvas::OnMouseMove(
+	wxMouseEvent& evt
+){
 	if (this->m_draggedObj != nullptr) {
 		if (this->m_shouldRotate) {
 			double absDiffY = evt.GetPosition().y - m_lastDragOrigin.m_y;

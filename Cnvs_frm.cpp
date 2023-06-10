@@ -52,17 +52,17 @@ void FRAME_CLASS_NAME::OnAddButtonClick(
 		sizeDistrib(FromDIP(50), FromDIP(200))/*random size*/
 		, xDistrib(0, m_p_canvas->GetSize().GetWidth())/*random x*/
 		, yDistrib(0, m_p_canvas->GetSize().GetHeight())/*random y*/
-		, colorDistrib(0, 0xFFFFFF);/*random color*/
+		, colorDistrib(0, 0xFF);/*random color*/
 	
 	std::uniform_real_distribution<>
 		angleDistrib(0.0, M_PI * 2.0);/*random rotate angle from 0 to 360*/
-	
+
 	m_p_canvas->AddRect(sizeDistrib(m_randGen)
 		, sizeDistrib(m_randGen)
 		, xDistrib(m_randGen)
 		, yDistrib(m_randGen)
 		, angleDistrib(m_randGen)
-		, colorDistrib(m_randGen)
+		, wxColor(colorDistrib(m_randGen), colorDistrib(m_randGen), colorDistrib(m_randGen), colorDistrib(m_randGen))
 		, "Num. " + std::to_string(m_p_canvas->GetObjectCount() + 1));
 }
 
