@@ -161,6 +161,7 @@
     <ClInclude Include="Cnvs_frm.h" />
     <ClInclude Include="DrawingCnvs.h" />
     <ClInclude Include="MyMacros.h" />
+    <ClInclude Include="Pulsar.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="collector.txt" />

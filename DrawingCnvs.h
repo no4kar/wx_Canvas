@@ -8,6 +8,7 @@
 /*declarate own event macros for .Conect() or .Bind()*/
 wxDECLARE_EVENT(CANVAS_RECT_ADDED, wxCommandEvent);
 wxDECLARE_EVENT(CANVAS_RECT_REMOVED, wxCommandEvent);
+wxDECLARE_EVENT(CANVAS_TOP_RECT_REMOVED, wxCommandEvent);
 
 struct GraphicObject
 {
@@ -29,11 +30,11 @@ public:
     
 private:
     void OnPaint(wxPaintEvent& evt);
-    
+    /*return (this->m_objList.rend()) if not find*/
     auto GetClickedObj(wxMouseEvent& evt)const;
     
     /*which object is selected, should be rotated(alt-kay) or moved*/
-    void OnMouseDown(wxMouseEvent& evt);
+    void OnMouseLDown(wxMouseEvent& evt);
     /*rotate or move*/
     void OnMouseMove(wxMouseEvent& evt);
     void OnMouseUp(wxMouseEvent& evt);
@@ -45,6 +46,7 @@ private:
 
     void SendRectAddedEvent(const wxString& rectTitle);
     void SendRectRemovedEvent(const wxString& rectTitle);
+    void SendTopRectRemovedEvent(const wxString& rectTitle);
 
     std::list<GraphicObject> m(objList);
 

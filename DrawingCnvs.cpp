@@ -5,6 +5,7 @@
 
 wxDEFINE_EVENT(CANVAS_RECT_ADDED, wxCommandEvent);
 wxDEFINE_EVENT(CANVAS_RECT_REMOVED, wxCommandEvent);
+wxDEFINE_EVENT(CANVAS_TOP_RECT_REMOVED, wxCommandEvent);
 
 
 DrawingCanvas::DrawingCanvas(wxWindow* parent, wxWindowID id, const wxPoint& pos, const wxSize& size)
@@ -14,9 +15,10 @@ DrawingCanvas::DrawingCanvas(wxWindow* parent, wxWindowID id, const wxPoint& pos
 	this->m_shouldRotate = false;
 
 	this->SetBackgroundStyle(wxBG_STYLE_PAINT);
+	this->SetBackgroundColour(wxColor(0, 0, 0, 255));
 	
 	this->Bind(wxEVT_PAINT, &DrawingCanvas::OnPaint, this);
-	this->Bind(wxEVT_LEFT_DOWN, &DrawingCanvas::OnMouseDown, this);
+	this->Bind(wxEVT_LEFT_DOWN, &DrawingCanvas::OnMouseLDown, this);
 	this->Bind(wxEVT_MOTION, &DrawingCanvas::OnMouseMove, this);
 	this->Bind(wxEVT_LEFT_UP, &DrawingCanvas::OnMouseUp, this);
 	this->Bind(wxEVT_LEAVE_WINDOW, &DrawingCanvas::OnMouseLeave, this);/**/
@@ -33,13 +35,29 @@ void DrawingCanvas::OnPaint(wxPaintEvent& evt
 	wxAutoBufferedPaintDC dc(this);
 	dc.Clear();
 
-		#if 0
+		#if NULL
 	wxGraphicsContext* gc = wxGraphicsContext::Create(dc);
 		#else
-	std::shared_ptr<wxGraphicsContext> gc(wxGraphicsContext::Create(dc));
+	std::unique_ptr<wxGraphicsContext> gc(wxGraphicsContext::Create(dc));
 		#endif
 	
-	
+#if NULL
+	if (gc)
+    {
+        // make a path that contains a circle and some lines
+        gc->SetPen( *wxRED_PEN );
+        wxGraphicsPath path = gc->CreatePath();
+        path.AddCircle( 50.0, 50.0, 50.0 );
+        path.MoveToPoint(0.0, 50.0);
+        path.AddLineToPoint(100.0, 50.0);
+        path.MoveToPoint(50.0, 0.0);
+        path.AddLineToPoint(50.0, 100.0 );
+        path.CloseSubpath();
+        path.AddRectangle(25.0, 25.0, 50.0, 50.0);
+        gc->StrokePath(path);
+    }
+
+#else
 
 	if (gc) {
 		for(const auto &obj : this->m_objList){
@@ -56,8 +74,8 @@ void DrawingCanvas::OnPaint(wxPaintEvent& evt
 			, obj.rect.m_x + obj.rect.m_width / 2.0 - textWidth / 2.0
 			, obj.rect.m_y + obj.rect.m_height / 2.0 - textHeight / 2.0);
 		}
-		/**delete gc;/**/
 	}
+#endif/*if(gc){...*/
 }
 
 void DrawingCanvas::AddRect(
@@ -92,10 +110,10 @@ void DrawingCanvas::AddRect(
 void DrawingCanvas::RemoveTopRect()
 {
 	if (!m_objList.empty() && m_draggedObj == nullptr) {
-		auto text = m_objList.back().text;
+		wxString text = m_objList.back().text;
 		m_objList.pop_back();
 
-		SendRectRemovedEvent(text);
+		SendTopRectRemovedEvent(text);
 		Refresh();
 	}
 }
@@ -121,19 +139,23 @@ void DrawingCanvas::OnMouseLDClicked(
 
 	if (clickedObjIter /*if exist*/ != this->m_objList.rend()
 		) {
+		bool isTop = (&(*clickedObjIter) == &m_objList.back());
+		wxString text = (*clickedObjIter).text;
 		this->m_objList.erase(/* ".erase()" accept only forward iter */std::prev(clickedObjIter.base()));
+		SendRectRemovedEvent(text); 
+		if (isTop) SendTopRectRemovedEvent(text);
 		Refresh();
 	}
 }
 
-void DrawingCanvas::OnMouseDown(
+void DrawingCanvas::OnMouseLDown(
 	wxMouseEvent& evt
 ) {
 	auto clickedObjIter = GetClickedObj(evt);
 
 	/*start to drag or rotation process*/
 
-	/*clicked object must on the top of stack, that mean last in the objList*/
+	/*lClick+Ctrl push object on the top of stack, that mean last in the objList*/
 	if (clickedObjIter /*if exist*/ != this->m_objList.rend()) {
 		if (wxGetKeyState(WXK_CONTROL)){
 			auto forwardIt = std::prev(clickedObjIter.base());/* ".erase()" accept only forward iter */
@@ -203,6 +225,14 @@ void DrawingCanvas::SendRectAddedEvent(const wxString& rectTitle
 void DrawingCanvas::SendRectRemovedEvent(const wxString& rectTitle
 ) {
 	wxCommandEvent evt(CANVAS_RECT_REMOVED, GetId());
+	evt.SetEventObject(this);
+	evt.SetString(rectTitle);
+	ProcessWindowEvent(evt);
+}
+
+void DrawingCanvas::SendTopRectRemovedEvent(const wxString& rectTitle
+) {
+	wxCommandEvent evt(CANVAS_TOP_RECT_REMOVED, GetId());
 	evt.SetEventObject(this);
 	evt.SetString(rectTitle);
 	ProcessWindowEvent(evt);

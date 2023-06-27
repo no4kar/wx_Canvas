@@ -41,6 +41,9 @@
     <ClInclude Include="MyMacros.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Pulsar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="collector.txt">
